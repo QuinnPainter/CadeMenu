@@ -1,0 +1,8 @@
+both players control
+all front buttons except for far right start game
+far right button returns to main emulator list
+all bottom row buttons start game
+top left button opens settings menu
+top middle opens alphabet menu
+top right marks game as favourite
+favourites show up in alphabetical location, but also again at the top of the list
