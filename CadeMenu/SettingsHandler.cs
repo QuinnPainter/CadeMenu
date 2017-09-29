@@ -12,6 +12,8 @@ namespace CadeMenu
     [Serializable]
     public class ControllerSettings
     {
+        public string Name { get; set; }
+        public Guid ID { get; set; }
         public int[] Select { get; set; }
         public int[] Back { get; set; }
         public int[] Favourite { get; set; }
@@ -34,7 +36,7 @@ namespace CadeMenu
             get { return gameListLocation; }
             set { gameListLocation = value; }
         }
-        public ControllerSettings Controller { get; set; }
+        public List<ControllerSettings> Controller { get; set; }
     }
 
     public class SettingsHandler

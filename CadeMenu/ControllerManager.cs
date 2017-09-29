@@ -32,9 +32,9 @@ namespace CadeMenu
         readonly int NavigateAcceleration = 30;
         readonly int MaxNavigateSpeed = 40;
         int NavigateSpeed;
-        public void Init()
+        public void Init(Guid g = default(Guid))
         {
-            s = new SimpleJoystick();
+            s = new SimpleJoystick(g);
             state = s.State;
             LocalButtons = s.State.GetButtons();
             timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(5) };
@@ -206,23 +206,38 @@ namespace CadeMenu
         /// 
         /// Construct, attach the joystick
         /// 
-        public SimpleJoystick()
+        public SimpleJoystick(Guid instance = default(Guid))
         {
             DirectInput dinput = new DirectInput();
 
-            // Search for device
-            foreach (DeviceInstance device in dinput.GetDevices(DeviceClass.GameController, DeviceEnumerationFlags.AttachedOnly))
+            if (instance == default(Guid))
             {
-                // Create device
+                // Search for device
+                foreach (DeviceInstance device in dinput.GetDevices(DeviceClass.GameController, DeviceEnumerationFlags.AttachedOnly))
+                {
+                    // Create device
+                    try
+                    {
+                        //Console.WriteLine("Detected controller : " + device.InstanceName);
+                        Joystick = new Joystick(dinput, device.InstanceGuid);
+                        break;
+                    }
+                    catch (DirectInputException)
+                    {
+                        //Console.WriteLine("Not a controller : " + device.ProductName);
+                    }
+                }
+            }
+            else
+            {
+                //No need to search
                 try
                 {
-                    Console.WriteLine("Detected controller : " + device.InstanceName);
-                    Joystick = new Joystick(dinput, device.InstanceGuid);
-                    break;
+                    Joystick = new Joystick(dinput, instance);
                 }
                 catch (DirectInputException)
                 {
-                    //Console.WriteLine("Not a controller : " + device.ProductName);
+
                 }
             }
 

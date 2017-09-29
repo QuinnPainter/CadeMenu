@@ -16,6 +16,7 @@ using System.Windows.Shapes;
 using System.IO;
 using System.Windows.Threading;
 using System.Diagnostics;
+using SlimDX.DirectInput;
 
 namespace CadeMenu
 {
@@ -33,7 +34,8 @@ namespace CadeMenu
         int MaxScroll = 2;
         int SavedSelection = 0;
         List<int> AlphabetIndices = new List<int>();
-        ControllerManager con;
+        List<Joystick> connectedControllers = new List<Joystick>();
+        List<ControllerManager> connectedControllerManagers = new List<ControllerManager>();
         //SolidColorBrush UnselectedColour = new SolidColorBrush((Color) ColorConverter.ConvertFromString("#FF252525"));
         public MainWindow()
         {
@@ -53,10 +55,34 @@ namespace CadeMenu
                 consoleList.Items.Add(t);
             }
             //consoleList.Height = totalHeight;
-            con = new ControllerManager();
-            con.settings = settings.Controller;
-            con.Navigate += ControlNavigate;
-            con.Init();
+            connectedControllers = ListControllers();
+            foreach(Joystick c in connectedControllers)
+            {
+                ControllerSettings cs = new ControllerSettings();
+                bool settingsExist = false;
+                foreach (ControllerSettings settings in settings.Controller)
+                {
+                    if (c.Information.InstanceGuid == settings.ID)
+                    {
+                        cs = settings;
+                        settingsExist = true;
+                    }
+                }
+                if (settingsExist == false)
+                {
+                    settings.Controller.Add(new ControllerSettings { Name = c.Information.ProductName, ID = c.Information.InstanceGuid });
+                    SettingsHandler.Write(settings);
+                }
+                else
+                {
+                    //MessageBox.Show("Joystick connected : " + c.Information.ProductName + " " + c.Information.ProductGuid, "things", MessageBoxButton.OK);
+                    ControllerManager con = new ControllerManager();
+                    connectedControllerManagers.Add(con);
+                    con.settings = cs;
+                    con.Navigate += ControlNavigate;
+                    con.Init(c.Information.InstanceGuid);
+                }
+            }
             consoleList.SelectedIndex = 0;
             alphabetList.SelectedIndex = 0;
             gameList.SelectedIndex = 0;
@@ -66,6 +92,26 @@ namespace CadeMenu
             timer.Tick += Scroll;
             timer.Start();
             GenerateAlphabet();
+        }
+
+        public List<Joystick> ListControllers()
+        {
+            List<Joystick> sticks = new List<Joystick>();
+            DirectInput dinput = new DirectInput();
+            // Search for device
+            foreach (DeviceInstance device in dinput.GetDevices(DeviceClass.GameController, DeviceEnumerationFlags.AttachedOnly))
+            {
+                try
+                {
+                    Console.WriteLine("Detected controller : " + device.InstanceName);
+                    sticks.Add(new Joystick(dinput, device.InstanceGuid));
+                }
+                catch (DirectInputException)
+                {
+                    //Console.WriteLine("Not a controller : " + device.ProductName);
+                }
+            }
+            return sticks;
         }
 
         void LoadDetails()
@@ -231,13 +277,13 @@ namespace CadeMenu
                 }
                 else
                 {
-                    con.Release();
+                    foreach (ControllerManager c in connectedControllerManagers) { c.Release(); }
                     string command = @"/c """"" + consoles[consoleList.SelectedIndex].command + @""" """ + currentGames[gameList.SelectedIndex].path + @"""""";
                     Console.WriteLine(command);
                     var processInfo = new ProcessStartInfo("cmd.exe", command);
                     var process = Process.Start(processInfo);
                     process.WaitForExit();
-                    con.Init();
+                    foreach (ControllerManager c in connectedControllerManagers) { c.Init(); }
                 }
             }
             else
