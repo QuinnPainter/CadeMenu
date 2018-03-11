@@ -55,7 +55,7 @@ namespace CadeMenu
             return consoles;
         }
 
-        public static List<game> GenerateGameList(string dir)
+        public static List<game> GenerateGameList(string dir, bool OnlyGamelistGames)
         {
             List<game> games = new List<game>();
             List<string> list = new List<string>();
@@ -80,9 +80,13 @@ namespace CadeMenu
             foreach (string s in list)
             {
                 game xmlData = xmlGamelist.Find(g => g.path == s);
-                if (gamelist && xmlData != null)
+                if (gamelist == true && xmlData != null)
                 {
                     games.Add(xmlData);
+                }
+                else if (gamelist == true && OnlyGamelistGames == true)
+                {
+                    continue; //Don't add the game
                 }
                 else
                 {
@@ -102,35 +106,43 @@ namespace CadeMenu
 
         public static List<game> ParseGamelistXml(string xmlPath, string gamePath)
         {
-            //XDocument doc = XDocument.Load(path);
-            //var d = doc.Descendants();
             List<game> xmlGames = new List<game>();
-            XmlDocument doc = new XmlDocument();
-            doc.Load(xmlPath);
-            XmlNodeList nodeList = doc.DocumentElement.SelectNodes("/gameList/game");
-            foreach(XmlNode node in nodeList)
+            try
             {
-                xmlGames.Add(new game {
-                    name = node.SelectSingleNode("name").InnerText,
-                    publisher = node.SelectSingleNode("publisher").InnerText,
-                    releasedate = node.SelectSingleNode("releasedate").InnerText,
-                    image = Path.Combine(gamePath, "images" , Path.GetFileName(node.SelectSingleNode("image").InnerText)),
-                    bannerImage = Path.Combine(gamePath, "banners", Path.GetFileName(node.SelectSingleNode("image").InnerText)),
-                    path = Path.Combine(gamePath, Path.GetFileName(node.SelectSingleNode("path").InnerText))
-                });
-                //Console.WriteLine(node.SelectSingleNode("name").InnerText);
+                //XDocument doc = XDocument.Load(path);
+                //var d = doc.Descendants();
+                XmlDocument doc = new XmlDocument();
+                doc.Load(xmlPath);
+                XmlNodeList nodeList = doc.DocumentElement.SelectNodes("/gameList/game");
+                foreach (XmlNode node in nodeList)
+                {
+                    xmlGames.Add(new game
+                    {
+                        name = node.SelectSingleNode("name").InnerText,
+                        publisher = node.SelectSingleNode("publisher").InnerText,
+                        releasedate = node.SelectSingleNode("releasedate").InnerText,
+                        image = Path.Combine(gamePath, "images", Path.GetFileName(node.SelectSingleNode("image").InnerText)),
+                        bannerImage = Path.Combine(gamePath, "banners", Path.GetFileName(node.SelectSingleNode("image").InnerText)),
+                        path = Path.Combine(gamePath, Path.GetFileName(node.SelectSingleNode("path").InnerText))
+                    });
+                    //Console.WriteLine(node.SelectSingleNode("name").InnerText);
+                }
+            }
+            catch (FileNotFoundException ex)
+            {
+                throw new Exception("NoGamelist", ex);
             }
             return xmlGames;
         }
 
-        public static List<int> GenerateAlphabetIndices(List<game> games)
+        public static List<int> GenerateAlphabetIndices(List<game> games, int NumberOfFavourites)
         {
             string alphabet = "abcdefghijklmnopqrstuvwxyz";
             List<int> indices = new List<int>();
             indices.Add(0);//add first for favourite
             foreach(char c in alphabet)
             {
-                int i = games.FindIndex(s => s.name.ToLowerInvariant().StartsWith(c.ToString()));
+                int i = games.FindIndex(NumberOfFavourites - 1, s => s.name.ToLowerInvariant().StartsWith(c.ToString()));
                 if (i == -1)
                 {
                     indices.Add(indices.Last());

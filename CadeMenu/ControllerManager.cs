@@ -20,6 +20,8 @@ namespace CadeMenu
 
     public class ControllerManager
     {
+        public Guid JoystickGuid;
+
         public event EventHandler<EventArgsString> Navigate;
         public ControllerSettings settings;
         DispatcherTimer timer;
@@ -34,6 +36,7 @@ namespace CadeMenu
         int NavigateSpeed;
         public void Init(Guid g = default(Guid))
         {
+            JoystickGuid = g;
             s = new SimpleJoystick(g);
             state = s.State;
             LocalButtons = s.State.GetButtons();
@@ -108,6 +111,7 @@ namespace CadeMenu
 
         void ButtonChanged(int button, bool pressed)
         {
+            //MessageBox.Show("Button " + button + " pressed for " + JoystickGuid.ToString(), "Error", MessageBoxButton.OK);
             EventHandler<EventArgsString> handler = Navigate;
             if (handler == null || pressed)//only trigger event on button release
             {

@@ -37,6 +37,7 @@ namespace CadeMenu
             set { gameListLocation = value; }
         }
         public List<ControllerSettings> Controller { get; set; }
+        public bool ShowOnlyGamelistGames { get; set; }
     }
 
     public class SettingsHandler

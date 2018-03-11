@@ -2,14 +2,16 @@
 <Settings xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
   <ConsoleListLocation>E:\Users\Quinn Painter\Documents\Projects\CadeMenu\Consoles</ConsoleListLocation>
   <GameListLocation>D:\Backups\MAME 0.78 (2003)\MAME2003_Reference_Set_MAME0.78_ROMs_CHDs_Samples\Cut Down Roms</GameListLocation>
+  <ShowOnlyGamelistGames>true</ShowOnlyGamelistGames>
     <Controller>
     <ControllerSettings>
       <Name>Controller (Xbox 360 Wireless Receiver for Windows)</Name>
-	  <Select>
-		<int>0</int>
-		<int>2</int>
-	  </Select>
-	  <Back>
+      <ID>59979bc0-2d80-11e5-8004-444553540000</ID>
+      <Select>
+		    <int>0</int>
+		    <int>2</int>
+	    </Select>
+	    <Back>
         <int>1</int>
         <int>3</int>
       </Back>

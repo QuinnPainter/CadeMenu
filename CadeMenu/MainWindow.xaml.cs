@@ -17,6 +17,8 @@ using System.IO;
 using System.Windows.Threading;
 using System.Diagnostics;
 using SlimDX.DirectInput;
+using System.Net;
+using System.Collections.Specialized;
 
 namespace CadeMenu
 {
@@ -244,7 +246,7 @@ namespace CadeMenu
 
         void NavigateLeftRight(bool direction)
         {
-            Console.WriteLine(gameList.SelectedIndex);
+            //Console.WriteLine(gameList.SelectedIndex);
             //false goes left, true goes right
             if (ScrollTarget == 1 && direction)
             {
@@ -264,7 +266,7 @@ namespace CadeMenu
             if (ScrollTarget == 0 && direction)
             {
                 LoadGamesList();
-                AlphabetIndices = ListLoader.GenerateAlphabetIndices(currentGames);
+                AlphabetIndices = ListLoader.GenerateAlphabetIndices(currentGames, favourites.Count);
                 alphabetList.SelectedIndex = 0;
                 gameList.SelectedIndex = 0;
                 SavedSelection = 0;
@@ -278,12 +280,24 @@ namespace CadeMenu
                 else
                 {
                     foreach (ControllerManager c in connectedControllerManagers) { c.Release(); }
-                    string command = @"/c """"" + consoles[consoleList.SelectedIndex].command + @""" """ + currentGames[gameList.SelectedIndex].path + @"""""";
+                    string command = "/c " + consoles[consoleList.SelectedIndex].command;
+                    //command.Replace("%ROMNAME%", System.IO.Path.GetFileNameWithoutExtension(currentGames[gameList.SelectedIndex].path));
+                    //command.Replace("%ROMPATH%", @"""" + currentGames[gameList.SelectedIndex].path + @"""");
+                    SendSignData(System.IO.Path.GetFileNameWithoutExtension(currentGames[gameList.SelectedIndex].path));
+                    command = @"/c """"" + consoles[consoleList.SelectedIndex].command + @""" """ + currentGames[gameList.SelectedIndex].path + @""" """ + System.IO.Path.GetFileNameWithoutExtension(currentGames[gameList.SelectedIndex].path) + @"""""";
+                    //In batch file %1 is game path, %2 is game name
                     Console.WriteLine(command);
                     var processInfo = new ProcessStartInfo("cmd.exe", command);
                     var process = Process.Start(processInfo);
                     process.WaitForExit();
-                    foreach (ControllerManager c in connectedControllerManagers) { c.Init(); }
+                    SendSignData("clear");
+                    string contIds = "";
+                    foreach (ControllerManager c in connectedControllerManagers)
+                    {
+                        contIds += (" " + c.JoystickGuid);
+                        c.Init(c.JoystickGuid);
+                    }
+                    MessageBox.Show("Joystick IDs: " + contIds, "stuff", MessageBoxButton.OK);
                 }
             }
             else
@@ -298,6 +312,24 @@ namespace CadeMenu
                 alphabetList.SelectedIndex = SavedSelection;
                 SavedSelection = gameList.SelectedIndex;
                 gameList.SelectedIndex = -1;
+            }
+        }
+
+        void SendSignData(string toSend)
+        {
+            try
+            {
+                using (var wb = new WebClient())
+                {
+                    var data = new NameValueCollection();
+                    data["name"] = toSend;
+                    var response = wb.UploadValues("http://192.168.1.16:5000", "POST", data);
+                    string responseInString = Encoding.UTF8.GetString(response);
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Sign send failed: " + e.Message);
             }
         }
 
@@ -318,7 +350,7 @@ namespace CadeMenu
         void LoadGamesList()
         {
             gameList.Items.Clear();
-            currentGames = ListLoader.GenerateGameList(System.IO.Path.Combine(settings.GameListLocation, consoles[consoleList.SelectedIndex].name));
+            currentGames = ListLoader.GenerateGameList(System.IO.Path.Combine(settings.GameListLocation, consoles[consoleList.SelectedIndex].name), settings.ShowOnlyGamelistGames);
             favourites = ListLoader.ReadFavourites(consoles[consoleList.SelectedIndex].favourites, currentGames);
             foreach (game c in favourites)
             {
