@@ -19,6 +19,7 @@ using System.Diagnostics;
 using SlimDX.DirectInput;
 using System.Net;
 using System.Collections.Specialized;
+using System.Threading;
 
 namespace CadeMenu
 {
@@ -283,21 +284,21 @@ namespace CadeMenu
                     string command = "/c " + consoles[consoleList.SelectedIndex].command;
                     //command.Replace("%ROMNAME%", System.IO.Path.GetFileNameWithoutExtension(currentGames[gameList.SelectedIndex].path));
                     //command.Replace("%ROMPATH%", @"""" + currentGames[gameList.SelectedIndex].path + @"""");
-                    SendSignData(System.IO.Path.GetFileNameWithoutExtension(currentGames[gameList.SelectedIndex].path));
+                    SendSignDataThreaded(System.IO.Path.GetFileNameWithoutExtension(currentGames[gameList.SelectedIndex].path));
                     command = @"/c """"" + consoles[consoleList.SelectedIndex].command + @""" """ + currentGames[gameList.SelectedIndex].path + @""" """ + System.IO.Path.GetFileNameWithoutExtension(currentGames[gameList.SelectedIndex].path) + @"""""";
                     //In batch file %1 is game path, %2 is game name
                     Console.WriteLine(command);
                     var processInfo = new ProcessStartInfo("cmd.exe", command);
                     var process = Process.Start(processInfo);
                     process.WaitForExit();
-                    SendSignData("clear");
+                    SendSignDataThreaded("clear");
                     string contIds = "";
                     foreach (ControllerManager c in connectedControllerManagers)
                     {
                         contIds += (" " + c.JoystickGuid);
                         c.Init(c.JoystickGuid);
                     }
-                    MessageBox.Show("Joystick IDs: " + contIds, "stuff", MessageBoxButton.OK);
+                    //MessageBox.Show("Joystick IDs: " + contIds, "stuff", MessageBoxButton.OK);
                 }
             }
             else
@@ -315,6 +316,12 @@ namespace CadeMenu
             }
         }
 
+        void SendSignDataThreaded(string toSend)
+        {
+            Thread t = new Thread(() => SendSignData(toSend));
+            t.Start();
+        }
+
         void SendSignData(string toSend)
         {
             try
@@ -323,8 +330,8 @@ namespace CadeMenu
                 {
                     var data = new NameValueCollection();
                     data["name"] = toSend;
-                    var response = wb.UploadValues("http://192.168.1.16:5000", "POST", data);
-                    string responseInString = Encoding.UTF8.GetString(response);
+                    /*var response = */wb.UploadValues("http://192.168.1.16:5000", "POST", data);
+                    //string responseInString = Encoding.UTF8.GetString(response);
                 }
             }
             catch (Exception e)
